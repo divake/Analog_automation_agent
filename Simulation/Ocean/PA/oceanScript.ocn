@@ -1,8 +1,8 @@
 simulator( 'spectre )
-design(  "/home/asal/Shared/Netlists/PA/netlist")
-resultsDir( "/home/asal/Shared/Results/PA" )
+design(  "/ssd_4TB/divake/AICircuit/Shared/Netlists/PA/netlist")
+resultsDir( "/ssd_4TB/divake/AICircuit/Shared/Results/PA" )
 modelFile( 
-    '("/home/asal/Shared/Model/45n270AModels.sp" "")
+    '("/ssd_4TB/divake/AICircuit/Shared/Model/45n270AModels.sp" "")
 )
 analysis('sp ?ports list("/PORT0" "/PORT1")  ?start "0"  ?stop "50G"  
 		?step "0.5G"  )

@@ -6,7 +6,7 @@ import csv
 import subprocess
 
 
-# DOCKER_CMD = 'docker exec --user=julien rlinux8-1 /bin/tcsh -c -v /home/asal/AICircuit/Simulation:./'
+# DOCKER_CMD = 'docker exec --user=julien rlinux8-1 /bin/tcsh -c -v /ssd_4TB/divake/AICircuit/AICircuit/Simulation:./'
 DOCKER_CMD = 'docker exec --user=asal rlinux8-2 /bin/tcsh -c'
 # OCEAN_FILENAME = 'oceanScript.ocn'
 

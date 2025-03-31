@@ -9,8 +9,8 @@ metrics:
     Bandwidth: 0
     PowerConsumption: 0
     VoltageGain: 0
-ocean: /home/asal/Docker/Ocean
-oceandocker: /home/asal/Shared/Ocean
+ocean: /ssd_4TB/divake/AICircuit/Docker/Ocean
+oceandocker: /ssd_4TB/divake/AICircuit/Shared/Ocean
 dataset: Dataset
 ---
 circuit: TSVA
@@ -26,8 +26,8 @@ metrics:
     Bandwidth: 0
     PowerConsumption: 0
     VoltageGain: 0
-ocean: /home/asal/Docker/Ocean
-oceandocker: /home/asal/Shared/Ocean
+ocean: /ssd_4TB/divake/AICircuit/Docker/Ocean
+oceandocker: /ssd_4TB/divake/AICircuit/Shared/Ocean
 dataset: Dataset
 ---
 circuit: CVA
@@ -40,8 +40,8 @@ metrics:
     Bandwidth: 0
     PowerConsumption: 0
     VoltageGain: 0
-ocean: /home/asal/Docker/Ocean
-oceandocker: /home/asal/Shared/Ocean
+ocean: /ssd_4TB/divake/AICircuit/Docker/Ocean
+oceandocker: /ssd_4TB/divake/AICircuit/Shared/Ocean
 dataset: Dataset
 ---
 circuit: VCO
@@ -59,8 +59,8 @@ metrics:
     OutputPower: 0
     PhaseNoise: 0
     TuningRange: 0
-ocean: /home/asal/Docker/Ocean
-oceandocker: /home/asal/Shared/Ocean
+ocean: /ssd_4TB/divake/AICircuit/Docker/Ocean
+oceandocker: /ssd_4TB/divake/AICircuit/Shared/Ocean
 dataset: Dataset
 ---
 circuit: Mixer
@@ -74,8 +74,8 @@ metrics:
     IFVoltageSwing: 0
     ConversionGain: 0
     NoiseFigure: 0
-ocean: /home/asal/Docker/Ocean
-oceandocker: /home/asal/Shared/Ocean
+ocean: /ssd_4TB/divake/AICircuit/Docker/Ocean
+oceandocker: /ssd_4TB/divake/AICircuit/Shared/Ocean
 dataset: Dataset
 ---
 circuit: PA
@@ -93,8 +93,8 @@ metrics:
     DrainEfficiency: 0
     PSAT: 0
     PowerConsumption: 0
-ocean: /home/asal/Docker/Ocean
-oceandocker: /home/asal/Shared/Ocean
+ocean: /ssd_4TB/divake/AICircuit/Docker/Ocean
+oceandocker: /ssd_4TB/divake/AICircuit/Shared/Ocean
 dataset: Dataset
 ---
 circuit: LNA
@@ -112,8 +112,8 @@ metrics:
     NFMin: 0
     Bandwidth: 0
     PowerConsumption: 0
-ocean: /home/asal/Docker/Ocean
-oceandocker: /home/asal/Shared/Ocean
+ocean: /ssd_4TB/divake/AICircuit/Docker/Ocean
+oceandocker: /ssd_4TB/divake/AICircuit/Shared/Ocean
 dataset: Dataset
 ---
 circuit: Transmitter
@@ -140,8 +140,8 @@ metrics:
     OutputPower: 0
     Bandwidth: 0
     PowerConsumption: 0
-ocean: /home/asal/Docker/Ocean
-oceandocker: /home/asal/Shared/Ocean
+ocean: /ssd_4TB/divake/AICircuit/Docker/Ocean
+oceandocker: /ssd_4TB/divake/AICircuit/Shared/Ocean
 dataset: Dataset
 ---
 circuit: Receiver
@@ -170,6 +170,6 @@ metrics:
     NoiseFigure: 0
     VoltageGain: 0
     PowerConsumption: 0
-ocean: /home/asal/Docker/Ocean
-oceandocker: /home/asal/Shared/Ocean
+ocean: /ssd_4TB/divake/AICircuit/Docker/Ocean
+oceandocker: /ssd_4TB/divake/AICircuit/Shared/Ocean
 dataset: Dataset

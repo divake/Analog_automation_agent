@@ -1,8 +1,8 @@
 simulator( 'spectre )
-design(	 "/home/asal/Shared/Netlists/Transmitter/netlist")
-resultsDir( "/home/asal/Shared/Results/Transmitter" )
+design(	 "/ssd_4TB/divake/AICircuit/Shared/Netlists/Transmitter/netlist")
+resultsDir( "/ssd_4TB/divake/AICircuit/Shared/Results/Transmitter" )
 modelFile( 
-    '("/home/asal/Shared/Model/45n270AModels.sp" "")
+    '("/ssd_4TB/divake/AICircuit/Shared/Model/45n270AModels.sp" "")
 )
 analysis('sp ?ports list("/PORT0" "/PORT1")  ?start "1G"  ?stop "50G"  )
 analysis('pnoise ?sweeptype "relative"  ?relharmnum "1"  ?start "10k"  

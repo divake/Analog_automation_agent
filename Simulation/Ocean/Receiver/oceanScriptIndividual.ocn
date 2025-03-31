@@ -1,8 +1,8 @@
 simulator( 'spectre )
-design(	 "/home/asal/Shared/Netlists/Receiver/Individual/netlist")
-resultsDir( "/home/asal/Shared/Results/Receiver" )
+design(	 "/ssd_4TB/divake/AICircuit/Shared/Netlists/Receiver/Individual/netlist")
+resultsDir( "/ssd_4TB/divake/AICircuit/Shared/Results/Receiver" )
 modelFile( 
-    '("/home/asal/Shared/Model/45n270AModels.sp" "")
+    '("/ssd_4TB/divake/AICircuit/Shared/Model/45n270AModels.sp" "")
 )
 analysis('qpss ?funds list("LO" "RF")  ?maxharms list("1" "1")  ?errpreset "conservative"  )
 analysis('sp ?ports list("/PORT0" "/PORT3")  ?start "1G"  ?stop "50G"  

@@ -1,8 +1,8 @@
 simulator( 'spectre )
-design(  "/home/asal/Shared/Netlists/LNA/netlist")
-resultsDir( "/home/asal/Shared/Results/LNA" )
+design(  "/ssd_4TB/divake/AICircuit/Shared/Netlists/LNA/netlist")
+resultsDir( "/ssd_4TB/divake/AICircuit/Shared/Results/LNA" )
 modelFile( 
-    '("/home/asal/Shared/Model/45n270AModels.sp" "")
+    '("/ssd_4TB/divake/AICircuit/Shared/Model/45n270AModels.sp" "")
 )
 analysis('sp ?ports list("/PORT0" "/PORT1")  ?start "1G"  ?stop "10G"  
 		?donoise "yes"  ?oprobe "/PORT1"  ?iprobe "/PORT0"  )

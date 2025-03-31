@@ -1,8 +1,8 @@
 simulator( 'spectre )
-design(  "/home/asal/Shared/Netlists/VCO/netlist")
-resultsDir( "/home/asal/Shared/Results/VCO" )
+design(  "/ssd_4TB/divake/AICircuit/Shared/Netlists/VCO/netlist")
+resultsDir( "/ssd_4TB/divake/AICircuit/Shared/Results/VCO" )
 modelFile( 
-    '("/home/asal/Shared/Model/45n270AModels.sp" "")
+    '("/ssd_4TB/divake/AICircuit/Shared/Model/45n270AModels.sp" "")
 )
 analysis('tran ?stop "20n"  ?errpreset "conservative"  )
 analysis('hb ?tstabenvlp_autosteady ""  ?tstabenvlpstop ""  ?saveinit "yes"  

@@ -1,8 +1,8 @@
 simulator( 'spectre )
-design(	 "/home/asal/Shared/Netlists/Receiver/netlist")
-resultsDir( "/home/asal/Shared/Results/Receiver" )
+design(	 "/ssd_4TB/divake/AICircuit/Shared/Netlists/Receiver/netlist")
+resultsDir( "/ssd_4TB/divake/AICircuit/Shared/Results/Receiver" )
 modelFile( 
-    '("/home/asal/Shared/Model/45n270AModels.sp" "")
+    '("/ssd_4TB/divake/AICircuit/Shared/Model/45n270AModels.sp" "")
 )
 analysis('pss ?engine "Harmonic Balance"  ?flexbalance "yes"  ?oversamplefactor ""  
 		?fund "27.9G"  ?harms "10"  ?errpreset "moderate"  ?tstabenvlpstopHB ""  
