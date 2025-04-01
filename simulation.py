@@ -10,20 +10,21 @@ from os.path import join
 
 
 circuit_params = get_circ_params(args.circuit)
-circuit_path, circuit_path_docker = get_circ_path(args.circuit)
+circuit_path = get_circ_path(args.circuit)
 params_path = get_dataset_path(args.circuit, args.model)
 
-simulator = Simulator(circuit_path, circuit_path_docker, circuit_params, params_path, 'oceanScript.ocn')
+# Create simulator without Docker path
+simulator = Simulator(circuit_path, None, circuit_params, params_path, 'oceanScript.ocn')
 simulator.run_all(n=args.npoints)
 results = simulator.sim_results
 
 if args.circuit == 'Receiver':
-   simulator_individual = Simulator(circuit_path, circuit_path_docker, circuit_params, params_path, 'oceanScriptIndividual.ocn')
+   simulator_individual = Simulator(circuit_path, None, circuit_params, params_path, 'oceanScriptIndividual.ocn')
    simulator_individual.run_all(n=args.npoints)   
    for i in range(len(results)):
       results[i].update(simulator_individual.sim_results[i])
 elif args.circuit == 'Mixer':
-   simulator_voltage_swing = Simulator(circuit_path, circuit_path_docker, circuit_params, params_path, 'oceanScriptVoltageSwing.ocn')
+   simulator_voltage_swing = Simulator(circuit_path, None, circuit_params, params_path, 'oceanScriptVoltageSwing.ocn')
    simulator_voltage_swing.run_all(n=args.npoints)   
    for i in range(len(results)):
       results[i].update(simulator_voltage_swing.sim_results[i])

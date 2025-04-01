@@ -33,13 +33,12 @@ def get_circ_path(circuit: str):
     :return: full Ocean script path, e.g. /path/to/Ocean/circuit
     """
     circuit_path = None
-    circuit_path_docker = None
 
     for item in config:
         if circuit == item['circuit']:
-            return item['ocean'] + '/' + circuit, item['oceandocker'] + '/' + circuit
+            return item['ocean'] + '/' + circuit
 
-    if not circuit_path or not circuit_path_docker:
+    if not circuit_path:
         raise NotImplementedError
 
 

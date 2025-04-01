@@ -4,10 +4,11 @@
 
 import csv
 import subprocess
+import os
 
 
-# DOCKER_CMD = 'docker exec --user=julien rlinux8-1 /bin/tcsh -c -v /ssd_4TB/divake/AICircuit/AICircuit/Simulation:./'
-DOCKER_CMD = 'docker exec --user=asal rlinux8-2 /bin/tcsh -c'
+# Remove Docker command and use direct execution
+# DOCKER_CMD = 'docker exec --user=asal rlinux8-2 /bin/tcsh -c'
 # OCEAN_FILENAME = 'oceanScript.ocn'
 
 
@@ -16,7 +17,7 @@ class Simulator:
     def __init__(self, circuit_path, circuit_path_docker, circuit_params, params_path, ocean_filename):
         """
         :param circuit_path: circuit path in a host system
-        :param circuit_path_docker: circuit path inside a docker container
+        :param circuit_path_docker: circuit path inside a docker container (not used anymore)
         :param circuit_params: defined circuit parameters
         :param params_path: circuit parameter value path
         """
@@ -25,9 +26,9 @@ class Simulator:
         self.circuit_params = circuit_params
         self.params_path = params_path
         
-        # construct simulation command with docker
-        self.circuit_path_docker = circuit_path_docker
-        self.docker_cmd = DOCKER_CMD
+        # Remove Docker references
+        # self.circuit_path_docker = circuit_path_docker
+        # self.docker_cmd = DOCKER_CMD
         
         # store simulation results
         self.sim_results = []
@@ -38,15 +39,25 @@ class Simulator:
         Note that all simulation parameters are defined in input.scs file.
         If additional simulation functions need to be added, you should directly edit input.scs file.
         """
+        # Use direct path to ocean executable that we found
+        ocean_path = "/EDA_Tools/Cadence/IC618/tools/dfII/bin/ocean"
         
-        bash_cmds = f'\"cd {self.circuit_path_docker}; ocean -nograph -replay oceanScriptNew.ocn"'
-        sim_cmd = f'{self.docker_cmd} {bash_cmds}'
-        # raise ValueError(sim_cmd, bash_cmds)
-        # print(sim_cmd)
-        ret = subprocess.call(sim_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        # Check if the path exists, otherwise use the default command
+        if not os.path.exists(ocean_path):
+            print(f"[WARNING] Could not find Ocean at {ocean_path}, trying with module system")
+            sim_cmd = f'cd {self.circuit_path} && module load cadence/virtuoso/6.18 && ocean -nograph -replay oceanScriptNew.ocn'
+        else:
+            sim_cmd = f'cd {self.circuit_path} && {ocean_path} -nograph -replay oceanScriptNew.ocn'
+            
+        print(f"Running simulation: {sim_cmd}")
+        
+        # Use bash to ensure module command works properly
+        ret = subprocess.call(sim_cmd, shell=True, executable='/bin/bash')
         
         if ret:
             print('[ERROR] cmd is not properly executed!!!')
+            print(f'Command used: {sim_cmd}')
+            print("Make sure Cadence environment is properly set up")
 
                 
     def get_results(self):
@@ -54,6 +65,12 @@ class Simulator:
         """
         cur_sim_result = {}
         result_path = self.circuit_path + '/results.txt'
+        
+        # Check if results file exists
+        if not os.path.exists(result_path):
+            print(f"[ERROR] Results file not found: {result_path}")
+            return
+            
         result_file = open(result_path, 'r')
         lines = result_file.readlines()
         for line in lines:
@@ -103,6 +120,11 @@ class Simulator:
         """Calculate error compared to reference values
         :param perf_ref: reference performance
         """
+        # If there are no simulation results, skip error calculation
+        if not self.sim_results:
+            print("[ERROR] No simulation results to calculate error.")
+            return
+            
         for key in self.sim_results[-1]:
             if 'Error' not in key and 'GroundTruth' not in key:  # only check actual values, not error
                 val_actual = self.sim_results[-1][key]
@@ -127,6 +149,7 @@ class Simulator:
 def alter_circ_param(new_params_values, ocean_path):
     scs_file = open(ocean_path, 'r')
     lines = scs_file.readlines()
+    scs_file.close()  # Properly close the file
     
     # format for set variable values
     format_var = 'desVar(   \"{}\" {} )\n'
@@ -143,3 +166,4 @@ def alter_circ_param(new_params_values, ocean_path):
     ocean_path_new = '/'.join(ocean_path.split('/')[0:-1]) + '/oceanScriptNew.ocn'
     ocean_file_new = open(ocean_path_new, 'w')
     ocean_file_new.writelines(lines)
+    ocean_file_new.close()  # Properly close the file

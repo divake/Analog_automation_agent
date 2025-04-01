@@ -1,8 +1,8 @@
 simulator( 'spectre )
-design(  "/ssd_4TB/divake/AICircuit/Shared/Netlists/CSVA/netlist")
-resultsDir( "/ssd_4TB/divake/AICircuit/Shared/Results/CSVA" )
+design(  "/ssd_4TB/divake/AICircuit/Simulation/Netlists/CSVA/netlist")
+resultsDir( "/ssd_4TB/divake/AICircuit/Simulation/Results/CSVA" )
 modelFile( 
-    '("/ssd_4TB/divake/AICircuit/Shared/Model/45n270AModels.sp" "")
+    '("/ssd_4TB/divake/AICircuit/Simulation/Model/45n270AModels.sp" "")
 )
 analysis('ac ?start "0"  ?stop "1G"  )
 analysis('dc ?saveOppoint t  )
