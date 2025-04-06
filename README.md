@@ -6,7 +6,6 @@
 
 📣 **Updates:** We've added a detailed guide on running simulations and using the Docker container! Check it out here: [SIM_GUIDE.md](./Simulation/SIM_GUIDE.md).
 
-📣 Check out our new paper [**Supervised Learning for Analog and RF Circuit Design: Benchmarks and Comparative Insights**](https://arxiv.org/abs/2501.11839).
 
 ## 📖 Table of Contents
 
@@ -17,9 +16,6 @@
     * [Description](#description)
     * [Results](#results)
   * [Visualization](#-visualization)
-  * [Paper](#-paper)
-  * [Citation](#-citation)
-  * [Where to Ask for Help](#-where-to-ask-for-help)
 
 ## 🔧 Requirements
 
@@ -103,37 +99,3 @@ For **Transmitter**:
 
 <img align="center" src="Images/Transmitter.png">
 
-## 📚 Paper
-  
-  "AICircuit: A Multi-Level Dataset and Benchmark for AI-Driven Analog Integrated Circuit Design", by A. Mehradfar, X. Zhao, Y. Niu, S. Babakniya, M. Alesheikh, H. Aghasi, and S. Avestimehr, arxiv: 2407.18272, 2024. 
-  * [Paper](https://arxiv.org/abs/2407.18272)
-  * In [Machine Learning and the Physical Sciences at NeurIPS 2024](https://ml4physicalsciences.github.io/2024/)
-
- "Supervised Learning for Analog and RF Circuit Design: Benchmarks and Comparative Insights", by A. Mehradfar, X. Zhao, Y. Niu, S. Babakniya, M. Alesheikh, H. Aghasi, and S. Avestimehr, arxiv: 2501.11839, 2025. 
- * [Paper](https://arxiv.org/abs/2501.11839)
-
-## 🎯 Citation 
-
-If you use AICircuit in a research paper, please cite our works as follows:
-
-```bibtex
-@article{Mehradfar2024AICircuit,
-      title={AICircuit: A Multi-Level Dataset and Benchmark for AI-Driven Analog Integrated Circuit Design}, 
-      author={Mehradfar, Asal and Zhao, Xuzhe and Niu, Yue and Babakniya, Sara and Alesheikh, Mahdi and Aghasi, Hamidreza and Avestimehr, Salman},
-      journal={Machine Learning and the Physical Sciences Workshop @ NeurIPS},
-      year={2024}
-}
-```
-
-```bibtex
-@article{Mehradfar2025Supervised,
-      title={Supervised Learning for Analog and RF Circuit Design: Benchmarks and Comparative Insights},
-      author={Mehradfar, Asal and Zhao, Xuzhe and Niu, Yue and Babakniya, Sara and Alesheikh, Mahdi and Aghasi, Hamidreza and Avestimehr, Salman},
-      journal={arXiv preprint arXiv:2501.11839},
-      year={2025}
-}
-```
-
-## ❓ Where to Ask for Help
-
-If you have any questions, feel free to open a [Discussion](https://github.com/AvestimehrResearchGroup/AICircuit/discussions) and ask your question. You can also email mehradfa@usc.edu (Asal Mehradfar).
