@@ -47,7 +47,8 @@ class Simulator:
             print(f"[WARNING] Could not find Ocean at {ocean_path}, trying with module system")
             sim_cmd = f'cd {self.circuit_path} && module load cadence/virtuoso/6.18 && ocean -nograph -replay oceanScriptNew.ocn'
         else:
-            sim_cmd = f'cd {self.circuit_path} && {ocean_path} -nograph -replay oceanScriptNew.ocn'
+            # Always load the cadence module to avoid virtuoso not found errors
+            sim_cmd = f'cd {self.circuit_path} && module load cadence/virtuoso/6.18 && {ocean_path} -nograph -replay oceanScriptNew.ocn'
             
         print(f"Running simulation: {sim_cmd}")
         
@@ -73,18 +74,36 @@ class Simulator:
             
         result_file = open(result_path, 'r')
         lines = result_file.readlines()
+        result_file.close()  # Close the file properly
+        
         for line in lines:
             if ':' in line:
                 try:
-                    metric, value = line.split(':')[0], float(line.split(':')[1])
-                except ValueError:
-                    return
-                else:
+                    parts = line.split(':')
+                    metric = parts[0].strip()
+                    value_str = parts[1].strip()
+                    
+                    # Skip if value is empty
+                    if not value_str:
+                        print(f"[WARNING] Empty value for metric: {metric}")
+                        continue
+                        
+                    value = float(value_str)
                     cur_sim_result[metric] = value
                     cur_sim_result['Error_'+metric] = 0
                     cur_sim_result[metric + '_GroundTruth'] = 0
+                except ValueError as e:
+                    print(f"[WARNING] Failed to parse value for line: {line.strip()} - Error: {e}")
+                    continue  # Skip this line but continue processing
+                except Exception as e:
+                    print(f"[ERROR] Unexpected error parsing line: {line.strip()} - Error: {e}")
+                    continue  # Skip this line but continue processing
                     
-        self.sim_results.append(cur_sim_result)
+        # Only append if we have any results
+        if cur_sim_result:
+            self.sim_results.append(cur_sim_result)
+        else:
+            print("[WARNING] No metrics were parsed from the results file")
 
 
     def run_all(self, n=10, display=True):

@@ -164,10 +164,8 @@ def run_tora_process(config: Dict[str, Any],
     
     # Define a simple metric to evaluate performance
     def calculate_performance_metric(sim_results, target_specs):
-        if "error" in sim_results:
+        if not sim_results or "error" in sim_results:
             return float('-inf')
-        
-        total_error = 0
         
         # Convert API spec names to simulator spec names
         spec_mapping = {
@@ -175,6 +173,17 @@ def run_tora_process(config: Dict[str, Any],
             "bandwidth": "Bandwidth",
             "power": "PowerConsumption"
         }
+        
+        # Check if we have all required metrics
+        required_metrics = [spec_mapping.get(spec, spec) for spec in target_specs.keys()]
+        missing_metrics = [metric for metric in required_metrics if metric not in sim_results]
+        
+        # If any required metric is missing, return very poor performance
+        if missing_metrics:
+            logger.warning(f"Missing required metrics: {missing_metrics}")
+            return float('-inf')
+        
+        total_error = 0
         
         for api_spec, target in target_specs.items():
             sim_spec = spec_mapping.get(api_spec, api_spec)
