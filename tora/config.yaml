@@ -38,6 +38,8 @@ simulation:
 iteration:
   max_iterations: 5
   convergence_threshold: 0.02  # 2% improvement threshold
+  absolute_threshold: 0.1      # Absolute error threshold for early stopping
+  min_iterations: 2            # Minimum iterations before allowing convergence
   parameter_adjustment_factor: 0.5  # How aggressively to adjust parameters
 
 # Default Specifications (used if none provided via CLI)

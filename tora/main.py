@@ -111,6 +111,10 @@ def run_tora_process(config: Dict[str, Any],
     max_iterations = config["iteration"]["max_iterations"]
     convergence_threshold = config["iteration"]["convergence_threshold"]
     
+    # Get absolute convergence threshold from config, or use a default
+    absolute_threshold = config["iteration"].get("absolute_threshold", 0.1)
+    min_iterations = config["iteration"].get("min_iterations", 1)
+    
     # Dictionary to store all results
     results = {
         "specifications": specs,
@@ -247,15 +251,25 @@ def run_tora_process(config: Dict[str, Any],
         # Calculate performance metric
         performance = calculate_performance_metric(simulation_results, specs)
         
+        # Log performance details
+        logger.info(f"Performance metric: {performance:.6f} (higher is better)")
+        if best_performance != float('-inf'):
+            perf_change = ((performance - best_performance) / abs(best_performance)) * 100 if best_performance != 0 else float('inf')
+            logger.info(f"Change from best: {perf_change:.2f}%")
+        
         # Check if this is the best result so far
         if performance > best_performance:
             logger.info("Found better parameters")
+            
+            # Calculate improvement percentage BEFORE updating best_performance
+            prev_best_performance = best_performance
+            improvement = (performance - prev_best_performance) / abs(prev_best_performance) if prev_best_performance != 0 else float('inf')
+            logger.info(f"Improvement: {improvement*100:.2f}%")
+            
+            # Now update best values
             best_performance = performance
             best_parameters = current_parameters.copy()
             best_metrics = simulation_results.copy()
-            
-            # Calculate improvement percentage
-            improvement = (performance - best_performance) / abs(best_performance) if best_performance != 0 else float('inf')
             
             # Save iteration result
             iteration_result = {
@@ -270,8 +284,13 @@ def run_tora_process(config: Dict[str, Any],
             results["iterations"].append(iteration_result)
             
             # Check for convergence
-            if abs(improvement) < convergence_threshold:
-                logger.info(f"Converged within threshold ({convergence_threshold})")
+            if iteration >= min_iterations and abs(improvement) < convergence_threshold:
+                logger.info(f"Converged within relative improvement threshold ({convergence_threshold})")
+                break
+                
+            # Additional check: if total error is already very small, we can stop
+            if abs(best_performance) < absolute_threshold:
+                logger.info(f"Converged within absolute error threshold ({absolute_threshold})")
                 break
         else:
             # Not an improvement, but still save the result
