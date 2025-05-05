@@ -36,6 +36,7 @@ class CircuitModel:
         
         # Override the weights path with the actual path to the pretrained model
         self.weights_path = "/ssd_4TB/divake/AICircuit/Dataset/CSVA/MultiLayerPerceptron/model.pkl"
+        self.scaler_path = "/ssd_4TB/divake/AICircuit/Dataset/CSVA/MultiLayerPerceptron/scaler.pkl"
         self.circuit_knowledge_path = "/ssd_4TB/divake/AICircuit/Dataset/CSVA/CSVA.csv"
         
         self.input_dim = config["model"]["input_dim"]
@@ -53,8 +54,9 @@ class CircuitModel:
         self.param_ranges = self._get_param_ranges_from_knowledge()
         self.spec_ranges = self._get_spec_ranges_from_knowledge()
         
-        # Initialize the ML model
+        # Initialize the ML model and scaler
         self._initialize_model()
+        self._initialize_scaler()
     
     def _load_circuit_knowledge(self):
         """Load circuit knowledge from CSV file"""
@@ -133,6 +135,26 @@ class CircuitModel:
             self.logger.error(f"Unsupported model type: {self.model_type}")
             raise ValueError(f"Unsupported model type: {self.model_type}")
     
+    def _initialize_scaler(self):
+        """Initialize the scaler from the saved file"""
+        try:
+            # Load the original scaler used during training
+            if os.path.exists(self.scaler_path):
+                self.logger.info(f"Loading scaler from: {self.scaler_path}")
+                
+                with open(self.scaler_path, 'rb') as f:
+                    self.scaler = pickle.load(f)
+                
+                self.logger.info("Scaler loaded successfully")
+            else:
+                self.logger.warning(f"Scaler not found at: {self.scaler_path}")
+                self.logger.warning("Using default scaling methods")
+                self.scaler = None
+        except Exception as e:
+            self.logger.error(f"Error loading scaler: {e}")
+            self.logger.warning("Using default scaling methods")
+            self.scaler = None
+    
     def _map_api_specs_to_model_specs(self, specs: Dict[str, float]) -> Dict[str, float]:
         """
         Map API specification names to model specification names.
@@ -158,6 +180,122 @@ class CircuitModel:
                 model_specs[api_name] = value
         
         return model_specs
+    
+    def _get_specs_array(self, specs: Dict[str, float]) -> np.ndarray:
+        """
+        Get a properly ordered array of specifications for the scaler.
+        
+        Args:
+            specs: Dictionary of specifications
+            
+        Returns:
+            Specifications as a numpy array in the correct order
+        """
+        # First map API spec names to model spec names
+        model_specs = self._map_api_specs_to_model_specs(specs)
+        
+        # Create array with specs in the expected order
+        specs_array = np.zeros(len(self.spec_names))
+        for i, name in enumerate(self.spec_names):
+            if name in model_specs:
+                specs_array[i] = model_specs[name]
+            else:
+                self.logger.warning(f"Specification {name} not provided, using default value")
+                # Use median value from ranges as default
+                min_val, max_val = self.spec_ranges[name]
+                specs_array[i] = (min_val + max_val) / 2
+                
+        return specs_array.reshape(1, -1)
+    
+    def predict(self, specs: Dict[str, float]) -> Dict[str, float]:
+        """
+        Predict circuit parameters based on performance specifications.
+        
+        Args:
+            specs: Dictionary of performance specifications
+            
+        Returns:
+            Dictionary of predicted circuit parameters
+        """
+        self.logger.info(f"Predicting parameters for specs: {specs}")
+        
+        # Check if we have a trained model
+        if self.model is None:
+            self.logger.warning("No trained model available, using heuristic prediction")
+            return self._heuristic_predict(specs)
+        
+        try:
+            # Get specs array in the correct order
+            specs_array = self._get_specs_array(specs)
+            
+            # Use scaler if available, otherwise use custom normalization
+            if self.scaler is not None:
+                # For prediction, we need to create a dummy parameter array 
+                # since the scaler expects both params and specs
+                dummy_params = np.zeros((1, len(self.param_names)))
+                # Combine into the format expected by the scaler (params, specs)
+                combined_data = np.hstack((dummy_params, specs_array))
+                # Apply scaling to the combined data
+                scaled_data = self.scaler.transform(combined_data)
+                # Extract just the scaled specs for prediction
+                scaled_specs = scaled_data[:, len(self.param_names):]
+                
+                # Use the model to predict parameters
+                scaled_params = self.model.predict(scaled_specs)
+                
+                # Prepare for inverse scaling
+                combined_prediction = np.hstack((scaled_params, scaled_specs))
+                # Inverse transform to get real-world values
+                inverse_data = self.scaler.inverse_transform(combined_prediction)
+                # Extract parameters
+                params_array = inverse_data[:, :len(self.param_names)]
+            else:
+                # Fall back to custom normalization if scaler not available
+                self.logger.warning("Using custom normalization - this may cause inconsistencies")
+                norm_specs = self._normalize_specs(specs)
+                params_array = self.model.predict(norm_specs)
+                params_array = self._denormalize_params_array(params_array)
+            
+            # Convert from array to dictionary
+            params = {}
+            for i, name in enumerate(self.param_names):
+                params[name] = float(params_array[0, i])
+            
+            # Map to simulator format
+            simulator_params = self._map_model_params_to_simulator_params(params)
+            
+            self.logger.info(f"Predicted parameters: {simulator_params}")
+            return simulator_params
+            
+        except Exception as e:
+            self.logger.error(f"Error during prediction: {e}")
+            self.logger.warning("Falling back to heuristic prediction")
+            return self._heuristic_predict(specs)
+    
+    def _denormalize_params_array(self, normalized_params: np.ndarray) -> np.ndarray:
+        """
+        Denormalize parameters from a numpy array.
+        
+        Args:
+            normalized_params: Normalized parameters as numpy array
+            
+        Returns:
+            Denormalized parameters as numpy array
+        """
+        denorm_params = np.zeros_like(normalized_params)
+        
+        for i, name in enumerate(self.param_names):
+            if i < normalized_params.shape[1]:
+                norm_value = normalized_params[0, i]
+                min_val, max_val = self.param_ranges[name]
+                
+                # Clip to ensure values are within range
+                norm_value = max(0.0, min(1.0, norm_value))
+                
+                # Denormalize
+                denorm_params[0, i] = min_val + norm_value * (max_val - min_val)
+                
+        return denorm_params
     
     def _normalize_specs(self, specs: Dict[str, float]) -> np.ndarray:
         """
@@ -235,46 +373,6 @@ class CircuitModel:
         simulator_params = params.copy()
         
         return simulator_params
-    
-    def predict(self, specs: Dict[str, float]) -> Dict[str, float]:
-        """
-        Predict circuit parameters based on performance specifications.
-        
-        Args:
-            specs: Dictionary of performance specifications
-            
-        Returns:
-            Dictionary of predicted circuit parameters
-        """
-        self.logger.info(f"Predicting parameters for specs: {specs}")
-        
-        # Normalize specifications
-        normalized_specs = self._normalize_specs(specs)
-        
-        if self.model is not None:
-            try:
-                # Use the pretrained model to predict parameters
-                normalized_params = self.model.predict(normalized_specs)
-                
-                # Convert to numpy array if it isn't already
-                if not isinstance(normalized_params, np.ndarray):
-                    normalized_params = np.array(normalized_params).reshape(1, -1)
-                
-                # Denormalize to get actual parameter values
-                params = self._denormalize_params(normalized_params)
-                
-                # Map to simulator parameter names
-                simulator_params = self._map_model_params_to_simulator_params(params)
-                
-                self.logger.info(f"Predicted parameters: {simulator_params}")
-                return simulator_params
-            except Exception as e:
-                self.logger.error(f"Error during parameter prediction with model: {e}")
-                # Fall back to heuristic prediction
-                return self._heuristic_predict(specs)
-        else:
-            # No model available, use heuristic-based prediction
-            return self._heuristic_predict(specs)
     
     def _heuristic_predict(self, specs: Dict[str, float]) -> Dict[str, float]:
         """
