@@ -27,8 +27,8 @@ class ToraVisualizer:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
         
-        # Initialize results storage
-        self.results = []
+        # Initialize results storage - change to dictionary to prevent duplicates by sample_id
+        self.results = {}
         self.columns = [
             "sample_id", 
             "VDD_GT", "Vgate_GT", "Wn_GT", "Rd_GT", 
@@ -49,10 +49,17 @@ class ToraVisualizer:
             writer = csv.writer(f)
             writer.writerow(self.columns)
         
-        # Initialize plots - changed from 2x3 to 1x3 to show only performance metrics
-        self.fig, self.axes = plt.subplots(1, 3, figsize=(18, 6))
+        # Initialize plots - changed from 1x3 to 3x1 (stacked vertically)
+        self.fig, self.axes = plt.subplots(3, 1, figsize=(10, 18))
         self.fig.tight_layout(pad=3.0)
         self.fig.suptitle("TORA-AICircuit Performance Comparison", fontsize=16)
+        
+        # Define line styles for different predictions
+        self.line_styles = {
+            "ground_truth": {"color": "blue", "linestyle": "-", "marker": "o", "markersize": 6, "linewidth": 2},
+            "mlp": {"color": "red", "linestyle": "--", "marker": "s", "markersize": 6, "linewidth": 2},
+            "tora": {"color": "green", "linestyle": ":", "marker": "^", "markersize": 6, "linewidth": 2.5}
+        }
         
         # Configure the plots
         self._configure_plots()
@@ -86,10 +93,35 @@ class ToraVisualizer:
                 ax.set_ylabel(f"{title} ({unit})")
                 ax.grid(True, linestyle='--', alpha=0.7)
                 
-                # Create empty plots that we'll update later
-                ax.plot([], [], 'bo-', label='Ground Truth', markersize=3)
-                ax.plot([], [], 'ro-', label='MLP Prediction', markersize=3)
-                ax.plot([], [], 'go-', label='TORA Prediction', markersize=3)
+                # Create empty plots that we'll update later - with different line styles
+                gt_style = self.line_styles["ground_truth"]
+                mlp_style = self.line_styles["mlp"]
+                tora_style = self.line_styles["tora"]
+                
+                ax.plot([], [], 
+                     color=gt_style["color"], 
+                     linestyle=gt_style["linestyle"], 
+                     marker=gt_style["marker"], 
+                     markersize=gt_style["markersize"],
+                     linewidth=gt_style["linewidth"],
+                     label='Ground Truth')
+                
+                ax.plot([], [], 
+                     color=mlp_style["color"], 
+                     linestyle=mlp_style["linestyle"], 
+                     marker=mlp_style["marker"], 
+                     markersize=mlp_style["markersize"],
+                     linewidth=mlp_style["linewidth"],
+                     label='MLP Prediction')
+                
+                ax.plot([], [], 
+                     color=tora_style["color"], 
+                     linestyle=tora_style["linestyle"], 
+                     marker=tora_style["marker"], 
+                     markersize=tora_style["markersize"],
+                     linewidth=tora_style["linewidth"],
+                     label='TORA Prediction')
+                
                 ax.legend()
         
         # Adjust layout
@@ -181,10 +213,10 @@ class ToraVisualizer:
             if key in gt_combined:
                 row_data[f"{key}_TORA_PCT"] = self._calculate_percentage_change(value, gt_combined[key])
         
-        # Append to results list
-        self.results.append(row_data)
+        # Store in dictionary using sample_id as key (replacing any previous entry for this sample)
+        self.results[sample_id] = row_data
         
-        # Update CSV file
+        # Update CSV file - append this row to the CSV
         with open(self.csv_path, 'a', newline='') as f:
             writer = csv.writer(f)
             
@@ -193,25 +225,25 @@ class ToraVisualizer:
             writer.writerow(row)
         
         # Update plots
-        self._update_plots(sample_id)
+        self._update_plots()
         
         # Save current plot
         self._save_current_plot(sample_id)
         
         self.logger.info(f"Updated visualization for sample {sample_id}")
     
-    def _update_plots(self, sample_id: int) -> None:
+    def _update_plots(self) -> None:
         """
         Update the visualization plots with the latest data.
-        
-        Args:
-            sample_id: Current sample ID
         """
         if not self.results:
             return
         
+        # Sort results by sample_id to ensure consistent order
+        sorted_results = [self.results[sample_id] for sample_id in sorted(self.results.keys())]
+        
         # Extract data for plotting
-        sample_ids = [r.get("sample_id", i) for i, r in enumerate(self.results)]
+        sample_ids = [r.get("sample_id") for r in sorted_results]
         
         # Parameters to plot - only showing performance metrics now
         parameters = ["Bandwidth", "PowerConsumption", "VoltageGain"]
@@ -225,6 +257,11 @@ class ToraVisualizer:
         # Ensure axes is always treated as an array
         if not isinstance(self.axes, np.ndarray):
             self.axes = np.array([self.axes])
+        
+        # Get line styles
+        gt_style = self.line_styles["ground_truth"]
+        mlp_style = self.line_styles["mlp"]
+        tora_style = self.line_styles["tora"]
         
         # Update each parameter plot
         for i, param in enumerate(parameters):
@@ -255,7 +292,7 @@ class ToraVisualizer:
             mlp_data = []
             tora_data = []
             
-            for result in self.results:
+            for result in sorted_results:
                 # Apply scaling if needed
                 scale = scale_factors.get(param, 1.0)
                 
@@ -270,13 +307,33 @@ class ToraVisualizer:
                 if tora_key in result:
                     tora_data.append(result[tora_key] * scale)
             
-            # Plot the data
+            # Plot the data with different line styles
             if gt_data:
-                ax.plot(sample_ids[:len(gt_data)], gt_data, 'bo-', label='Ground Truth', markersize=4)
+                ax.plot(sample_ids[:len(gt_data)], gt_data, 
+                      color=gt_style["color"], 
+                      linestyle=gt_style["linestyle"], 
+                      marker=gt_style["marker"], 
+                      markersize=gt_style["markersize"],
+                      linewidth=gt_style["linewidth"],
+                      label='Ground Truth')
+            
             if mlp_data:
-                ax.plot(sample_ids[:len(mlp_data)], mlp_data, 'ro-', label='MLP Prediction', markersize=4)
+                ax.plot(sample_ids[:len(mlp_data)], mlp_data, 
+                      color=mlp_style["color"], 
+                      linestyle=mlp_style["linestyle"], 
+                      marker=mlp_style["marker"], 
+                      markersize=mlp_style["markersize"],
+                      linewidth=mlp_style["linewidth"],
+                      label='MLP Prediction')
+            
             if tora_data:
-                ax.plot(sample_ids[:len(tora_data)], tora_data, 'go-', label='TORA Prediction', markersize=4)
+                ax.plot(sample_ids[:len(tora_data)], tora_data, 
+                      color=tora_style["color"], 
+                      linestyle=tora_style["linestyle"], 
+                      marker=tora_style["marker"], 
+                      markersize=tora_style["markersize"],
+                      linewidth=tora_style["linewidth"],
+                      label='TORA Prediction')
             
             ax.legend()
         
@@ -299,9 +356,12 @@ class ToraVisualizer:
         final_plot_path = os.path.join(self.output_dir, "final_plot.png")
         self.fig.savefig(final_plot_path, dpi=150)
         
-        # Generate a summary DataFrame
+        # Generate a summary DataFrame from our results dictionary
         if self.results:
-            df = pd.DataFrame(self.results)
+            # Convert results dictionary to list of rows
+            sorted_results = [self.results[sample_id] for sample_id in sorted(self.results.keys())]
+            df = pd.DataFrame(sorted_results)
+            
             summary_path = os.path.join(self.output_dir, "summary.csv")
             df.to_csv(summary_path, index=False)
             
@@ -363,8 +423,15 @@ if __name__ == "__main__":
             "VoltageGain": ground_truth["VoltageGain"] * (1 + np.random.normal(0, 0.1))
         }
         
-        visualizer.update(i, ground_truth, mlp_prediction, tora_prediction, mlp_metrics, tora_metrics)
-        time.sleep(0.5)  # Simulate processing time
+        # Simulate multiple updates for the same sample (as happens in TORA)
+        for _ in range(3):  # Simulate multiple TORA iterations
+            # Slightly adjust TORA predictions each time
+            tora_prediction = {k: v * (1 + np.random.normal(0, 0.02)) for k, v in tora_prediction.items()}
+            tora_metrics = {k: v * (1 + np.random.normal(0, 0.02)) for k, v in tora_metrics.items()}
+            
+            # Update visualization - only the last one should be shown in the plot
+            visualizer.update(i, ground_truth, mlp_prediction, tora_prediction, mlp_metrics, tora_metrics)
+            time.sleep(0.2)  # Simulate processing time
     
     visualizer.save_final_results()
     visualizer.show() 
