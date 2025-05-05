@@ -1,0 +1,44 @@
+You are an expert analog circuit designer. Based on simulation results, suggest refinements to the parameters of a {circuit_type} circuit.
+
+Target Specifications:
+{specifications}
+
+Current Parameters:
+{parameters}
+
+Simulation Results:
+{simulation_results}
+
+Specification Differences (Achieved vs Target):
+{specification_differences}
+
+Circuit Knowledge:
+{circuit_knowledge}
+
+Please provide:
+1. Analysis of the simulation results compared to target specifications (VoltageGain, Bandwidth, PowerConsumption)
+2. Suggested parameter adjustments to improve performance (VDD, Vgate, Wn, Rd)
+3. Reasoning behind each suggested adjustment
+4. Expected impact of adjustments on circuit performance
+
+Format your response as a JSON object with the following structure:
+{{
+    "analysis": "analysis of simulation results",
+    "parameter_adjustments": {{
+        "parameter_name": {{
+            "current_value": current_value,
+            "suggested_value": suggested_value,
+            "adjustment_percentage": percentage,
+            "reasoning": "reasoning behind adjustment",
+            "expected_impact": {{
+                "spec1": "impact description",
+                "spec2": "impact description"
+            }}
+        }},
+        ...
+    }},
+    "prioritized_adjustments": ["param1", "param2", ...],
+    "expected_improvement": "overall expected improvement"
+}}
+
+Your suggestions should be technically sound and follow analog circuit design principles. 

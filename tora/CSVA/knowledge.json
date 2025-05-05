@@ -1,0 +1,140 @@
+{
+  "circuit_type": "CSVA",
+  "description": "Common-Source Voltage Amplifier with resistive load",
+  "parameters": {
+    "VDD": {
+      "description": "Supply voltage",
+      "units": "V",
+      "typical_range": [1.0, 1.8],
+      "impact": {
+        "VoltageGain": "Higher VDD allows for more voltage headroom",
+        "PowerConsumption": "Higher VDD directly increases power consumption"
+      },
+      "relationships": [
+        "PowerConsumption = VDD × ID",
+        "VDS = VDD - ID × Rd"
+      ]
+    },
+    "Vgate": {
+      "description": "Gate bias voltage",
+      "units": "V",
+      "typical_range": [0.4, 0.8],
+      "impact": {
+        "VoltageGain": "Affects bias point and transistor operation region",
+        "Bandwidth": "Affects transconductance and therefore bandwidth",
+        "PowerConsumption": "Affects drain current and power consumption"
+      },
+      "relationships": [
+        "ID ∝ (Vgate - Vth)^2",
+        "gm ∝ sqrt(ID)"
+      ]
+    },
+    "Wn": {
+      "description": "Width of the NMOS transistor",
+      "units": "μm",
+      "typical_range": [1e-6, 10e-6],
+      "impact": {
+        "VoltageGain": "Increasing Wn increases transconductance (gm) which increases gain",
+        "Bandwidth": "Increasing Wn increases gate capacitance which decreases bandwidth",
+        "PowerConsumption": "Increasing Wn increases current which increases power consumption"
+      },
+      "relationships": [
+        "gm ∝ sqrt(Wn × Id)",
+        "Cgs ∝ Wn"
+      ]
+    },
+    "Rd": {
+      "description": "Drain resistor",
+      "units": "Ω",
+      "typical_range": [500, 3000],
+      "impact": {
+        "VoltageGain": "Increasing Rd increases voltage gain (Av = -gm × Rd)",
+        "Bandwidth": "Increasing Rd increases output RC time constant which decreases bandwidth",
+        "voltage_headroom": "Increasing Rd decreases voltage headroom"
+      },
+      "relationships": [
+        "Av = -gm × Rd",
+        "BW ∝ 1/(Rd × CL)",
+        "VDS = VDD - ID × Rd"
+      ]
+    }
+  },
+  "performance_metrics": {
+    "VoltageGain": {
+      "description": "Small-signal voltage gain",
+      "units": "dB",
+      "calculation": "Av = -gm × Rd",
+      "typical_range": [0, 15],
+      "trade_offs": [
+        "Higher gain typically comes at cost of reduced bandwidth",
+        "Higher gain typically requires higher power consumption"
+      ]
+    },
+    "Bandwidth": {
+      "description": "3dB bandwidth",
+      "units": "Hz",
+      "calculation": "BW = 1/(2π × Rd × CL)",
+      "typical_range": [50e6, 500e6],
+      "trade_offs": [
+        "Higher bandwidth typically comes at cost of reduced gain",
+        "Higher bandwidth typically requires higher power consumption"
+      ]
+    },
+    "PowerConsumption": {
+      "description": "Power consumption",
+      "units": "W",
+      "calculation": "P = VDD × ID",
+      "typical_range": [100e-6, 2000e-6],
+      "constraints": [
+        "Limited by thermal considerations",
+        "Limited by application requirements"
+      ]
+    }
+  },
+  "design_strategies": {
+    "high_gain": [
+      "Increase Rd to maximum acceptable value",
+      "Increase Wn to improve transconductance",
+      "Optimize Vgate for maximum gm"
+    ],
+    "high_bandwidth": [
+      "Decrease Rd to reduce RC time constant",
+      "Increase VDD to support higher current",
+      "Adjust Vgate to increase drain current"
+    ],
+    "low_power": [
+      "Reduce VDD if possible",
+      "Decrease Wn to reduce current",
+      "Increase Rd to maintain gain with lower current"
+    ],
+    "balanced_performance": [
+      "Start with moderate Rd (1000-1500Ω)",
+      "Set VDD to standard value (1.2V)",
+      "Adjust Wn and Vgate for required gain-bandwidth product"
+    ]
+  },
+  "common_issues": {
+    "limited_voltage_swing": {
+      "description": "Output signal may clip if input is too large",
+      "solutions": [
+        "Reduce Rd",
+        "Increase VDD if possible",
+        "Ensure proper biasing with appropriate Vgate"
+      ]
+    },
+    "temperature_sensitivity": {
+      "description": "Performance varies with temperature",
+      "solutions": [
+        "Use temperature compensation techniques",
+        "Design for worst-case temperature"
+      ]
+    },
+    "process_variation": {
+      "description": "Performance varies with manufacturing process",
+      "solutions": [
+        "Design with sufficient margins",
+        "Consider adaptive biasing techniques"
+      ]
+    }
+  }
+} 

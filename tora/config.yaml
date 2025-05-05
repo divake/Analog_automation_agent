@@ -1,0 +1,54 @@
+# TORA-AICircuit Configuration
+
+# Basic Settings
+project:
+  name: "TORA-AICircuit"
+  version: "0.1.0"
+  description: "Tool-integrated Reasoning Agent for AICircuit"
+
+# Circuit Settings
+circuit:
+  type: "CSVA"  # Initial circuit type (Common-Source Voltage Amplifier)
+  knowledge_path: "/ssd_4TB/divake/AICircuit/tora/CSVA/knowledge.json"
+
+# Model Settings
+model:
+  type: "MultiLayerPerceptron"  # Initial model type
+  weights_path: "/ssd_4TB/divake/AICircuit/Dataset/CSVA/MultiLayerPerceptron/best_model.pt"
+  input_dim: 3  # Number of specification parameters (gain, bandwidth, power)
+  output_dim: 4  # Number of circuit parameters to predict (W, L, RD, ID)
+
+# LLM Reasoning Settings
+reasoning:
+  api_url: "https://api.anthropic.com/v1/messages"
+  model: "claude-3-opus-20240229"  # Anthropic model
+  temperature: 0.2
+  max_tokens: 4000
+  prompts:
+    explanation_template: "/ssd_4TB/divake/AICircuit/tora/prompt_templates/explanation.txt"
+    refinement_template: "/ssd_4TB/divake/AICircuit/tora/prompt_templates/refinement.txt"
+
+# Simulation Settings
+simulation:
+  tool: "Cadence"
+  netlist_template: "/ssd_4TB/divake/AICircuit/tora/CSVA/netlist_templates/csva_template.sp"
+  simulation_command: "spectre -f {netlist_path} -o {output_dir}"
+  results_parser: "standard_parser"  # Parser function to use for simulation results
+
+# Iteration Settings
+iteration:
+  max_iterations: 5
+  convergence_threshold: 0.02  # 2% improvement threshold
+  parameter_adjustment_factor: 0.5  # How aggressively to adjust parameters
+
+# Default Specifications (used if none provided via CLI)
+default_specs:
+  gain: 20.0      # V/V
+  bandwidth: 100e6  # Hz
+  power: 1.0e-3   # W
+
+# Logging Settings
+logging:
+  level: "INFO"
+  file: "/ssd_4TB/divake/AICircuit/tora/logs/tora.log"
+  console: true 

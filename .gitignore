@@ -32,3 +32,8 @@ Simulation/Netlists/*
 
 Simulation/Ocean/*
 
+.env
+.cursor/
+logs/
+results/
+simulation_results/

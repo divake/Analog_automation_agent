@@ -1,0 +1,33 @@
+You are an expert analog circuit designer. Explain the reasoning behind the following parameter choices for a {circuit_type} circuit.
+
+Performance Specifications:
+{specifications}
+
+Predicted Parameters:
+{parameters}
+
+Circuit Knowledge:
+{circuit_knowledge}
+
+Please provide:
+1. Explanation for each parameter value (VDD, Vgate, Wn, Rd)
+2. How each parameter contributes to meeting the specifications (VoltageGain, Bandwidth, PowerConsumption)
+3. The trade-offs involved in these parameter choices
+4. Any potential improvements that could be made
+
+Format your response as a JSON object with the following structure:
+{{
+    "parameter_explanations": {{
+        "parameter_name": {{
+            "value": value,
+            "explanation": "detailed explanation",
+            "impact_on_specs": ["spec1", "spec2"],
+            "trade_offs": ["trade_off1", "trade_off2"]
+        }},
+        ...
+    }},
+    "overall_analysis": "overall analysis of the design",
+    "potential_improvements": ["improvement1", "improvement2"]
+}}
+
+Your explanation should be technically accurate and aligned with analog circuit design principles. 
