@@ -10,6 +10,7 @@ import json
 import logging
 import argparse
 import time
+import pandas as pd
 from typing import Dict, Any, List, Tuple
 from dotenv import load_dotenv
 
@@ -18,6 +19,7 @@ from utils import setup_logging, parse_specs_string, ensure_directory, calculate
 from reasoning import ReasoningModule
 from simulator import CadenceSimulator
 from CSVA.model import CircuitModel
+from tora_visualization import ToraVisualizer
 
 def main():
     """
@@ -29,6 +31,11 @@ def main():
     parser.add_argument("--specs", type=str, help="Performance specifications as comma-separated key=value pairs")
     parser.add_argument("--output", type=str, help="Output directory for results")
     parser.add_argument("--circuit", type=str, default="CSVA", help="Circuit type (default: CSVA)")
+    parser.add_argument("--test-csv", type=str, 
+                       default="/ssd_4TB/divake/AICircuit/Dataset/CSVA/MultiLayerPerceptron/test.csv", 
+                       help="Path to test CSV file containing ground truth data")
+    parser.add_argument("--num-samples", type=int, default=10, 
+                      help="Number of samples to process from the test CSV (default: 10, -1 for all)")
     args = parser.parse_args()
     
     # Load configuration
@@ -45,19 +52,6 @@ def main():
     logger = logging.getLogger(__name__)
     
     logger.info(f"Starting TORA-AICircuit v{config['project']['version']}")
-    
-    # Parse specifications
-    if args.specs:
-        specs = parse_specs_string(args.specs)
-    else:
-        # Use default specs from config
-        specs = config.get("default_specs", {
-            "gain": 20,
-            "bandwidth": 100e6,
-            "power": 1e-3
-        })
-    
-    logger.info(f"Using specifications: {specs}")
     
     # Create output directory
     if args.output:
@@ -82,29 +76,140 @@ def main():
         # Initialize simulator
         logger.info("Initializing simulator")
         simulator = CadenceSimulator(config)
+        
+        # Initialize visualizer
+        logger.info("Initializing visualization module")
+        visualizer = ToraVisualizer(output_dir)
     except Exception as e:
         logger.error(f"Error during initialization: {e}")
         sys.exit(1)
     
-    # Start the iterative refinement process
-    run_tora_process(config, specs, model, reasoning, simulator, output_dir)
+    # Check if we should use the test CSV file
+    if os.path.exists(args.test_csv):
+        logger.info(f"Using test data from {args.test_csv}")
+        run_with_test_csv(args.test_csv, args.num_samples, config, model, reasoning, simulator, visualizer, output_dir)
+    else:
+        # Parse specifications from command line
+        if args.specs:
+            specs = parse_specs_string(args.specs)
+        else:
+            # Use default specs from config
+            specs = config.get("default_specs", {
+                "gain": 20,
+                "bandwidth": 100e6,
+                "power": 1e-3
+            })
+        
+        logger.info(f"Using specifications: {specs}")
+        
+        # Start the iterative refinement process with a single spec
+        run_tora_process(config, specs, model, reasoning, simulator, visualizer, output_dir)
+    
+    # Save final visualization results
+    visualizer.save_final_results()
 
-def run_tora_process(config: Dict[str, Any], 
-                   specs: Dict[str, float],
-                   model: CircuitModel,
-                   reasoning: ReasoningModule,
-                   simulator: CadenceSimulator,
-                   output_dir: str):
+def run_with_test_csv(csv_path: str, 
+                     num_samples: int, 
+                     config: Dict[str, Any],
+                     model: CircuitModel,
+                     reasoning: ReasoningModule,
+                     simulator: CadenceSimulator,
+                     visualizer: ToraVisualizer,
+                     output_dir: str):
     """
-    Run the TORA iterative refinement process.
+    Run the TORA process using test data from a CSV file.
+    
+    Args:
+        csv_path: Path to the test CSV file
+        num_samples: Number of samples to process (-1 for all)
+        config: Configuration dictionary
+        model: Circuit model for parameter prediction
+        reasoning: Reasoning module for explanations and refinements
+        simulator: Simulator for running circuit simulations
+        visualizer: Visualization module for plotting results
+        output_dir: Output directory for results
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Load the test CSV file
+        df = pd.read_csv(csv_path)
+        logger.info(f"Loaded {len(df)} samples from {csv_path}")
+        
+        # Limit number of samples if specified
+        if num_samples > 0:
+            df = df.head(num_samples)
+            logger.info(f"Processing {len(df)} samples")
+        
+        # Process each sample
+        for i, row in df.iterrows():
+            logger.info(f"Processing sample {i+1}/{len(df)}")
+            
+            # Extract ground truth parameters and specs
+            ground_truth = {
+                "VDD": float(row["VDD"]),
+                "Vgate": float(row["Vgate"]),
+                "Wn": float(row["Wn"]),
+                "Rd": float(row["Rd"]),
+                "Bandwidth": float(row["Bandwidth"]),
+                "PowerConsumption": float(row["PowerConsumption"]),
+                "VoltageGain": float(row["VoltageGain"])
+            }
+            
+            # Create specifications for the model
+            specs = {
+                "bandwidth": ground_truth["Bandwidth"],
+                "power": ground_truth["PowerConsumption"],
+                "gain": ground_truth["VoltageGain"]
+            }
+            
+            logger.info(f"Sample {i+1} specs: {specs}")
+            logger.info(f"Sample {i+1} ground truth parameters: {ground_truth}")
+            
+            # Run TORA process with these specifications
+            results = run_tora_process_with_visualization(
+                config, specs, ground_truth, model, reasoning, simulator, visualizer, output_dir, i
+            )
+            
+            # Save individual sample results
+            with open(f"{output_dir}/sample_{i+1}_results.json", 'w') as f:
+                json.dump(results, f, indent=2)
+            
+            # Brief pause to allow visualization to update
+            time.sleep(0.5)
+        
+        logger.info(f"Completed processing {len(df)} samples")
+        
+    except Exception as e:
+        logger.error(f"Error processing test CSV: {e}")
+        raise
+
+def run_tora_process_with_visualization(
+    config: Dict[str, Any], 
+    specs: Dict[str, float],
+    ground_truth: Dict[str, float],
+    model: CircuitModel,
+    reasoning: ReasoningModule,
+    simulator: CadenceSimulator,
+    visualizer: ToraVisualizer,
+    output_dir: str,
+    sample_id: int = 0):
+    """
+    Run the TORA iterative refinement process with visualization updates.
     
     Args:
         config: Configuration dictionary
         specs: Performance specifications
+        ground_truth: Ground truth parameters and metrics
         model: Circuit model for parameter prediction
         reasoning: Reasoning module for explanations and refinements
         simulator: Simulator for running circuit simulations
+        visualizer: Visualization module for plotting results
         output_dir: Output directory for results
+        sample_id: Sample ID for visualization
+    
+    Returns:
+        Dictionary containing all results of the TORA process
     """
     logger = logging.getLogger(__name__)
     circuit_type = config["circuit"]["type"]
@@ -118,6 +223,7 @@ def run_tora_process(config: Dict[str, Any],
     # Dictionary to store all results
     results = {
         "specifications": specs,
+        "ground_truth": ground_truth,
         "iterations": []
     }
     
@@ -147,6 +253,16 @@ def run_tora_process(config: Dict[str, Any],
         
         # Add simulation results to iteration result
         results["iterations"][0]["simulation_results"] = simulation_results
+        
+        # Update visualization with MLP predictions and simulation results
+        visualizer.update(
+            sample_id=sample_id,
+            ground_truth=ground_truth,
+            mlp_prediction=parameters,
+            tora_prediction=parameters,  # Initially, TORA prediction is the same as MLP
+            mlp_metrics=simulation_results,
+            tora_metrics=simulation_results
+        )
     except Exception as e:
         logger.error(f"Error during initial simulation: {e}")
         simulation_results = {"error": str(e)}
@@ -156,10 +272,10 @@ def run_tora_process(config: Dict[str, Any],
         logger.error("Cannot continue with refinement due to simulation error")
         
         # Save results so far
-        with open(f"{output_dir}/results.json", 'w') as f:
+        with open(f"{output_dir}/sample_{sample_id}_results.json", 'w') as f:
             json.dump(results, f, indent=2)
         
-        return
+        return results
     
     # Iterative refinement loop
     current_parameters = parameters.copy()
@@ -283,6 +399,16 @@ def run_tora_process(config: Dict[str, Any],
             
             results["iterations"].append(iteration_result)
             
+            # Update visualization with the latest TORA results
+            visualizer.update(
+                sample_id=sample_id,
+                ground_truth=ground_truth,
+                mlp_prediction=parameters,  # Original MLP prediction
+                tora_prediction=current_parameters,  # Latest TORA refined parameters
+                mlp_metrics=results["iterations"][0]["simulation_results"],  # Original MLP metrics
+                tora_metrics=simulation_results  # Latest TORA metrics
+            )
+            
             # Check for convergence
             if iteration >= min_iterations and abs(improvement) < convergence_threshold:
                 logger.info(f"Converged within relative improvement threshold ({convergence_threshold})")
@@ -320,7 +446,62 @@ def run_tora_process(config: Dict[str, Any],
     results["final_performance"] = best_performance
     results["completed_iterations"] = len(results["iterations"]) - 1  # Exclude initial prediction
     
+    # One final visualization update with the best results
+    visualizer.update(
+        sample_id=sample_id,
+        ground_truth=ground_truth,
+        mlp_prediction=parameters,  # Original MLP prediction
+        tora_prediction=best_parameters,  # Best TORA parameters
+        mlp_metrics=results["iterations"][0]["simulation_results"],  # Original MLP metrics
+        tora_metrics=best_metrics  # Best TORA metrics
+    )
+    
     # Save results
+    with open(f"{output_dir}/sample_{sample_id}_results.json", 'w') as f:
+        json.dump(results, f, indent=2)
+    
+    logger.info(f"Results saved to {output_dir}/sample_{sample_id}_results.json")
+    
+    return results
+
+def run_tora_process(config: Dict[str, Any], 
+                    specs: Dict[str, float],
+                    model: CircuitModel,
+                    reasoning: ReasoningModule,
+                    simulator: CadenceSimulator,
+                    visualizer: ToraVisualizer,
+                    output_dir: str):
+    """
+    Wrapper for the original TORA process without ground truth (single sample).
+    
+    Args:
+        config: Configuration dictionary
+        specs: Performance specifications
+        model: Circuit model for parameter prediction
+        reasoning: Reasoning module for explanations and refinements
+        simulator: Simulator for running circuit simulations
+        visualizer: Visualization module
+        output_dir: Output directory for results
+    """
+    logger = logging.getLogger(__name__)
+    
+    # Create dummy ground truth from specs
+    ground_truth = {
+        "VDD": 1.5,
+        "Vgate": 0.7,
+        "Wn": 5e-6,
+        "Rd": 1000,
+        "Bandwidth": specs.get("bandwidth", 100e6),
+        "PowerConsumption": specs.get("power", 1e-3),
+        "VoltageGain": specs.get("gain", 10)
+    }
+    
+    # Run the process with visualization
+    results = run_tora_process_with_visualization(
+        config, specs, ground_truth, model, reasoning, simulator, visualizer, output_dir
+    )
+    
+    # Save overall results
     with open(f"{output_dir}/results.json", 'w') as f:
         json.dump(results, f, indent=2)
     
