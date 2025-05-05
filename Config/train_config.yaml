@@ -6,7 +6,7 @@ epochs: 100
 subset:
   - 0.9
 circuits:
-  - CSVA
+  - LNA #CSVA
 compare_method: False
 kfold: False
 independent_kfold: True

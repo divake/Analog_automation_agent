@@ -25,3 +25,10 @@ y.npy
 circuit_stats.txt
 aicircuit/
 oceanScriptNew.ocn
+
+
+Simulation/Results/*
+Simulation/Netlists/*
+
+Simulation/Ocean/*
+
