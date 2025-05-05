@@ -21,7 +21,7 @@ model:
 # LLM Reasoning Settings
 reasoning:
   api_url: "https://api.anthropic.com/v1/messages"
-  model: "claude-3-opus-20240229"  # Anthropic model
+  model: "claude-3-7-sonnet-20250219"  # Anthropic model
   temperature: 0.2
   max_tokens: 4000
   prompts:
@@ -31,7 +31,6 @@ reasoning:
 # Simulation Settings
 simulation:
   tool: "Cadence"
-  netlist_template: "/ssd_4TB/divake/AICircuit/tora/CSVA/netlist_templates/csva_template.sp"
   simulation_command: "spectre -f {netlist_path} -o {output_dir}"
   results_parser: "standard_parser"  # Parser function to use for simulation results
 
